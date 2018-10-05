@@ -154,7 +154,7 @@ function update() {
 
         //Проверка попаданий
         for (i = 0; i < arrow.length; i++){
-            ArrowHit(mob[j],arrow[i]);
+            ArrowHit(mob[j],arrow,i);
         }
 
         //Реализация коллизии (Нужна ли коллизия между скелетами?)
@@ -289,12 +289,13 @@ function update() {
             }
     }
 
-    function ArrowHit(mob,arrow){
+    function ArrowHit(mob,arrow,int){
 
         let agr_dist = 45;
-        let radius =  (Math.abs(mob.x+26 - arrow.x+12) + Math.abs(mob.y+36 - arrow.y+12));
+        let radius =  (Math.abs(mob.x+26 - arrow[i].x+12) + Math.abs(mob.y+36 - arrow[i].y+12));
         if (radius <= agr_dist){
                 mob.damage(10);
+                //DeleteArrow(int,arrow);
         }  
     }
 
@@ -306,8 +307,8 @@ function update() {
         arrow[arrow.length - 1].animations.play('fire', 6, true);
         game.physics.arcade.enable(arrow[arrow.length - 1]);
         game.input.activePointer.x;
-        arrow[arrow.length - 1].height = 60;
-        arrow[arrow.length - 1].width = 60;
+        arrow[arrow.length - 1].height = 25;
+        arrow[arrow.length - 1].width = 25;
         
                 // Vx/Vy = dx/dy;
                 // sqr(Vx) + sqr(Vy) = const
@@ -328,9 +329,20 @@ function update() {
                 }else{
                     arrow[arrow.length - 1].body.velocity.y = -resy;
                 }
-                
-                //Добавить таймер с удаление объекта
     }
+
+   /* function DeleteArrow(int,arrow){
+        for (i = 0; i < arrow.length;i++){
+            if (i >= int){
+                if (arrow[i+1] == null){
+                    break;
+                }else{
+                    arrow[i] = arrows[i+1];
+                }
+            }
+        }
+        arrow.length -=1;
+    }*/
 
 </script>
 
