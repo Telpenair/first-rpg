@@ -42,7 +42,6 @@
                 this.weaponType = 'bow';
                 this.arrow = [];
                 this.arrow.length = 0;
-                this.invulnerability = 0;
                 this.reload = 0;
                 this.body.health = 100;
                 this.body.maxHealth = 100;
@@ -101,16 +100,13 @@
             }
 
             battleController() {
-                if (this.invulnerability > 0) {
-                    this.body.tint = 0xff0000;
-                    this.invulnerability -= 1;
-                } else {
-                    this.body.tint = 0xffffff;
-                }
+                this.checkArrow();
+                this.ArrowHit();
 
                 if (this.reload > 0) {
                     this.reload -= 1;
                 }
+
                 if (game.input.activePointer.isDown) {
                     switch (this.weaponType) {
                         case 'bow':
@@ -122,6 +118,10 @@
                 }
             }
 
+            checkArrow(){
+                
+            }
+
             CreateArrow() {
                 const arrowSpeed = 200;
 
@@ -130,8 +130,8 @@
                 this.arrow[this.arrow.length - 1].animations.add('fire');
                 this.arrow[this.arrow.length - 1].animations.play('fire', 6, true);
                 game.physics.arcade.enable(this.arrow[this.arrow.length - 1]);
-                this.arrow[this.arrow.length - 1].height = 25;
-                this.arrow[this.arrow.length - 1].width = 25;
+                this.arrow[this.arrow.length - 1].height = 16;
+                this.arrow[this.arrow.length - 1].width = 16;
 
                 this.arrow[this.arrow.length - 1].damage = 25;
 
@@ -155,6 +155,32 @@
                     this.arrow[this.arrow.length - 1].body.velocity.y = -resy;
                 }
             }
+
+            DeleteArrow(int) {
+                for (var i = 0; i < this.arrow.length; i++) {
+                    if (i >= int) {
+                        if (this.arrow[i + 1] != null) {
+                            this.arrow[i].kill();
+                            this.arrow[i] = this.arrow[i + 1];
+                        }
+                    }
+                }
+                this.arrow.length -= 1;
+            }
+
+            ArrowHit() {
+                for (var i = 0; i < this.arrow.length; i++) {
+                    for (var j = 0; j < mobs.mob.length; j++) {
+                        var dist = 32;
+                        var radius = (Math.abs(mobs.mob[j].body.x - this.arrow[i].body.x) + Math.abs(mobs.mob[j].body.y - this.arrow[i].body.y));
+                        if (radius <= dist) {
+                            mobs.mob[j].body.damage(10);
+                            this.DeleteArrow(i);
+                        }
+
+                    }
+                }
+            }
         }
 
         class Skeleton {
@@ -162,6 +188,7 @@
                 this.body = game.add.sprite(x, y, 'Characters', 7);
                 this.body.height = 48;
                 this.body.width = 32;
+                this.reload = 0;
 
                 game.physics.arcade.enable(this.body);
                 this.body.collideWorldBounds = true;
@@ -190,7 +217,7 @@
                 //Регулятор скорости
                 this.body.body.velocity.x = 0;
                 this.body.body.velocity.y = 0;
-                
+
                 //Проверка движения
                 const dist = 250;
                 var radius = (Math.abs(this.body.x - player.body.x) + Math.abs(this.body.y - player.body.y));
@@ -239,6 +266,65 @@
                     this.body.frame = 7;
                 }
             }
+
+            battleController() {
+                if (this.reload > 0) {
+                    this.reload -= 1;
+                }
+                player.body.tint = 0xffffff;//Заменить анимацией
+                var dist = 50;
+                var radius = (Math.abs(this.body.x - player.body.x) + Math.abs(this.body.y - player.body.y));
+                if (radius <= dist) {
+                    if (this.reload <= 0) {
+                        player.body.damage(10);
+                        this.reload = 100;
+                    } else {
+                        player.body.tint = 0xff0000;//Заменить анимацией
+                    }
+
+                }
+            }
+        }
+
+        class Mobs {
+            constructor() {
+                this.mob = [];
+                this.mob.length = 0;
+            }
+
+            addMob(x, y, name) {
+                this.mob.length += 1;
+                switch (name) {
+                    case 'Skeleton':
+                        this.mob[this.mob.length - 1] = new Skeleton(x, y);
+                }
+            }
+
+            killMob(int) {
+                for (var i = 0; i < this.mob.length; i++) {
+                    if (i >= int) {
+                        if (this.mob[i + 1] == null) {
+                            break;
+                        } else {
+                            this.mob[i] = this.mob[i + 1];
+                        }
+                    }
+                }
+                this.mob[int].body.kill();
+                this.mob.length -= 1;
+            }
+
+            mobsController() {
+                for (var i = 0; i < this.mob.length; i++) {
+                    this.mob[i].controller();
+                    this.mob[i].battleController();
+
+                    //Проверка смерти
+                    if (this.mob[i].body.health <= 0) {
+                        this.killMob(i);
+                    }
+                }
+            }
         }
 
         //Описание переменных
@@ -246,7 +332,7 @@
             { preload: preload, create: create, update: update });
         let map;
         let player;
-        let mobs = [];
+        let mobs;
 
         function preload() {
             this.load.spritesheet('Characters', 'Assets/Characters.png', 52, 72);
@@ -261,13 +347,15 @@
         function create() {
             map = new Map();
             player = new Player(100, 100);
-            mobs[0] = new Skeleton(500, 500);
+            mobs = new Mobs();
+            mobs.addMob(500, 500, 'Skeleton');
+            mobs.addMob(400, 400, 'Skeleton');
         }
 
         function update() {
             player.controller();
             player.battleController();
-            mobs[0].controller();
+            mobs.mobsController();
         }
 
     </script>
