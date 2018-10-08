@@ -32,7 +32,7 @@
                 this.body.height = 48;
                 this.body.width = 32;
                 game.physics.arcade.enable(this.body);
-                this.body.collideWorldBounds = true;
+                this.body.body.collideWorldBounds = true;
                 this.cursor = game.input.keyboard.createCursorKeys();
 
                 this.healthbar = game.add.sprite(x, y - 10, 'HealthbarGreen');
@@ -118,20 +118,23 @@
                 }
             }
 
-            checkArrow(){
-                
+            checkArrow() {
+                if (this.arrow.length > 10) {
+                    this.arrow = this.DeleteArrow(0);
+                }
             }
 
             CreateArrow() {
                 const arrowSpeed = 200;
+                const arrowSize = 16;
 
                 this.arrow.length += 1;
                 this.arrow[this.arrow.length - 1] = game.add.sprite(this.body.x + 26, this.body.y + 36, 'Fireball');
                 this.arrow[this.arrow.length - 1].animations.add('fire');
                 this.arrow[this.arrow.length - 1].animations.play('fire', 6, true);
                 game.physics.arcade.enable(this.arrow[this.arrow.length - 1]);
-                this.arrow[this.arrow.length - 1].height = 16;
-                this.arrow[this.arrow.length - 1].width = 16;
+                this.arrow[this.arrow.length - 1].height = arrowSize;
+                this.arrow[this.arrow.length - 1].width = arrowSize;
 
                 this.arrow[this.arrow.length - 1].damage = 25;
 
@@ -157,27 +160,28 @@
             }
 
             DeleteArrow(int) {
+                var newArrow = [];
                 for (var i = 0; i < this.arrow.length; i++) {
-                    if (i >= int) {
+                    if (i < int) {
+                        newArrow[i] = this.arrow[i];
+                    } else {
                         if (this.arrow[i + 1] != null) {
-                            this.arrow[i].kill();
-                            this.arrow[i] = this.arrow[i + 1];
+                            newArrow[i] = this.arrow[i + 1];
                         }
                     }
                 }
-                this.arrow.length -= 1;
+                this.arrow[int].kill();
+                return newArrow;
             }
 
             ArrowHit() {
                 for (var i = 0; i < this.arrow.length; i++) {
-                    for (var j = 0; j < mobs.mob.length; j++) {
-                        var dist = 32;
-                        var radius = (Math.abs(mobs.mob[j].body.x - this.arrow[i].body.x) + Math.abs(mobs.mob[j].body.y - this.arrow[i].body.y));
-                        if (radius <= dist) {
+                    for (var j = 0; j < mobs.mob.length; j++) {                     
+                        if ((this.arrow[i].body.x > mobs.mob[j].body.x) && (this.arrow[i].body.x < mobs.mob[j].body.x+32) &&
+                        (this.arrow[i].body.y > mobs.mob[j].body.y) && (this.arrow[i].body.x < mobs.mob[j].body.x+48)) {
                             mobs.mob[j].body.damage(10);
-                            this.DeleteArrow(i);
+                            this.arrow = this.DeleteArrow(i);
                         }
-
                     }
                 }
             }
@@ -191,7 +195,7 @@
                 this.reload = 0;
 
                 game.physics.arcade.enable(this.body);
-                this.body.collideWorldBounds = true;
+                this.body.body.collideWorldBounds = true;
 
                 this.body.health = 50;
                 this.body.maxHealth = 50;
@@ -301,17 +305,18 @@
             }
 
             killMob(int) {
+                var newMob = [];
                 for (var i = 0; i < this.mob.length; i++) {
-                    if (i >= int) {
-                        if (this.mob[i + 1] == null) {
-                            break;
-                        } else {
-                            this.mob[i] = this.mob[i + 1];
+                    if (i < int) {
+                        newMob[i] = this.mob[i];
+                    } else {
+                        if (this.mob[i + 1] != null) {
+                            newMob[i] = this.mob[i + 1];
                         }
                     }
                 }
                 this.mob[int].body.kill();
-                this.mob.length -= 1;
+                return newMob;
             }
 
             mobsController() {
@@ -321,7 +326,7 @@
 
                     //Проверка смерти
                     if (this.mob[i].body.health <= 0) {
-                        this.killMob(i);
+                        this.mob = this.killMob(i);
                     }
                 }
             }
@@ -333,6 +338,7 @@
         let map;
         let player;
         let mobs;
+        let spawner = 0;
 
         function preload() {
             this.load.spritesheet('Characters', 'Assets/Characters.png', 52, 72);
@@ -348,11 +354,14 @@
             map = new Map();
             player = new Player(100, 100);
             mobs = new Mobs();
-            mobs.addMob(500, 500, 'Skeleton');
-            mobs.addMob(400, 400, 'Skeleton');
         }
 
         function update() {
+            spawner++;
+            if (spawner == 200) {
+                spawner = 0;
+                mobs.addMob(500, 500, 'Skeleton');
+            }
             player.controller();
             player.battleController();
             mobs.mobsController();
