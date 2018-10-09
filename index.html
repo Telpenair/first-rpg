@@ -9,6 +9,8 @@
         body {
             margin: 0;
         }
+        html { overflow:  hidden; }
+        div { height:  2000px; }
     </style>
 </head>
 
@@ -19,6 +21,7 @@
         class Map {
             constructor() {
                 game.physics.startSystem(Phaser.Physics.ARCADE);
+                //game.physics.startSystem(Phaser.Physics.P2JS);
                 this.body = game.add.tilemap('Map', 32, 32);
                 this.body.addTilesetImage('Tiles');
                 this.layer = this.body.createLayer(0);
@@ -34,6 +37,9 @@
                 game.physics.arcade.enable(this.body);
                 this.body.body.collideWorldBounds = true;
                 this.cursor = game.input.keyboard.createCursorKeys();
+                game.camera.follow(this.body);
+                //game.camera.deadzone = new Phaser.Rectangle(100, 100, 600, 400);
+                //game.camera.deadzone = new Phaser.Rectangle(300 , 300, screen.width -300, screen.height -300);
 
                 this.healthbar = game.add.sprite(x, y - 10, 'HealthbarGreen');
                 this.healthbar.width = 32;
@@ -161,6 +167,7 @@
 
             DeleteArrow(int) {
                 var newArrow = [];
+                this.arrow[int].kill();
                 for (var i = 0; i < this.arrow.length; i++) {
                     if (i < int) {
                         newArrow[i] = this.arrow[i];
@@ -170,15 +177,14 @@
                         }
                     }
                 }
-                this.arrow[int].kill();
                 return newArrow;
             }
 
             ArrowHit() {
                 for (var i = 0; i < this.arrow.length; i++) {
-                    for (var j = 0; j < mobs.mob.length; j++) {                     
-                        if ((this.arrow[i].body.x > mobs.mob[j].body.x) && (this.arrow[i].body.x < mobs.mob[j].body.x+32) &&
-                        (this.arrow[i].body.y > mobs.mob[j].body.y) && (this.arrow[i].body.x < mobs.mob[j].body.x+48)) {
+                    for (var j = 0; j < mobs.mob.length; j++) {
+                        if ((this.arrow[i].body.x > mobs.mob[j].body.x) && (this.arrow[i].body.x < mobs.mob[j].body.x + 32) &&
+                            (this.arrow[i].body.y > mobs.mob[j].body.y) && (this.arrow[i].body.x < mobs.mob[j].body.x + 48)) {
                             mobs.mob[j].body.damage(10);
                             this.arrow = this.DeleteArrow(i);
                         }
