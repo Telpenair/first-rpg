@@ -187,6 +187,7 @@
                             (this.arrow[i].body.y > mobs.mob[j].body.y) && (this.arrow[i].body.x < mobs.mob[j].body.x + 48)) {
                             mobs.mob[j].body.damage(10);
                             this.arrow = this.DeleteArrow(i);
+                            break;
                         }
                     }
                 }
