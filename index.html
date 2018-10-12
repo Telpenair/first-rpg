@@ -9,8 +9,14 @@
         body {
             margin: 0;
         }
-        html { overflow:  hidden; }
-        div { height:  2000px; }
+
+        html {
+            overflow: hidden;
+        }
+
+        div {
+            height: 2000px;
+        }
     </style>
 </head>
 
@@ -38,12 +44,16 @@
                 this.sprite.body.collideWorldBounds = true;
                 this.cursor = game.input.keyboard.createCursorKeys();
                 game.camera.follow(this.sprite);
-                //game.camera.deadzone = new Phaser.Rectangle(100, 100, 600, 400);
-                //game.camera.deadzone = new Phaser.Rectangle(300 , 300, screen.width -300, screen.height -300);
 
-                this.healthbar = game.add.sprite(x, y - 10, 'HealthbarGreen');
-                this.healthbar.width = 32;
-                this.healthbar.height = 4;
+                this.emptyHealthbar = game.add.sprite(0, screen.height - 100, 'emptyHealthbar');
+                this.emptyHealthbar.height = 100;
+                this.emptyHealthbar.width = 300;
+                this.emptyHealthbar.fixedToCamera = true;
+
+                this.healthbar = game.add.sprite(this.emptyHealthbar.x + 13, this.emptyHealthbar.y + 26, 'HealthbarGreen');
+                this.healthbar.width = 200;
+                this.healthbar.height = 45;
+                this.healthbar.fixedToCamera = true;
 
                 this.weaponType = 'bow';
                 this.arrow = [];
@@ -57,6 +67,7 @@
                 this.sprite.animations.add('up', [9, 10, 11], 7, true);
                 this.sprite.animations.add('down', [0, 1, 2], 7, true);
                 this.sprite.animations.add('idle', [1, 12, 13, 12], 2, true);
+
             }
 
             controller() {
@@ -64,9 +75,7 @@
                 game.physics.arcade.collide(this.sprite, map.layer);
 
                 //Проверка шкалы здоровья
-                this.healthbar.x = this.sprite.x;
-                this.healthbar.y = this.sprite.y - 8;
-                this.healthbar.width = 32 * (this.sprite.health / this.sprite.maxHealth);
+                this.healthbar.width = 260 * (this.sprite.health / this.sprite.maxHealth);
 
                 //Регулятор скорости
                 this.sprite.body.velocity.x = 0;
@@ -135,7 +144,7 @@
                 const arrowSize = 16;
 
                 this.arrow.length += 1;
-                this.arrow[this.arrow.length - 1] = game.add.sprite(this.sprite.x + 26, this.sprite.y + 36, 'Fireball');
+                this.arrow[this.arrow.length - 1] = game.add.sprite(this.sprite.x + 24 - arrowSize / 2, this.sprite.y + 20, 'Fireball');
                 this.arrow[this.arrow.length - 1].animations.add('fire');
                 this.arrow[this.arrow.length - 1].animations.play('fire', 6, true);
                 game.physics.arcade.enable(this.arrow[this.arrow.length - 1]);
@@ -165,8 +174,10 @@
             ArrowHit() {
                 for (var i = 0; i < this.arrow.length; i++) {
                     for (var j = 0; j < mobs.mob.length; j++) {
-                        if ((this.arrow[i].x > mobs.mob[j].sprite.x) && (this.arrow[i].x < mobs.mob[j].sprite.x + 32) &&
-                            (this.arrow[i].y > mobs.mob[j].sprite.y) && (this.arrow[i].x < mobs.mob[j].sprite.x + 48)) {
+                        if ((this.arrow[i].x + 8 > mobs.mob[j].sprite.x)
+                            && (this.arrow[i].x + 8 < mobs.mob[j].sprite.x + 32)
+                            && (this.arrow[i].y + 8 > mobs.mob[j].sprite.y)
+                            && (this.arrow[i].y + 8 < mobs.mob[j].sprite.y + 48)) {
                             mobs.mob[j].sprite.damage(10);
                             this.arrow = this.DeleteArrow(i);
                             break;
@@ -219,7 +230,8 @@
                 var right_on = (player.sprite.x > (this.sprite.x + 2));
                 var up_on = (player.sprite.y < this.sprite.y - 2);
                 var down_on = (player.sprite.y > this.sprite.y + 2);
-                if (agr_on) {
+                //arg_on заменен на true
+                if (true) {
                     if (left_on) {
                         this.sprite.body.velocity.x = -80;
                         this.sprite.animations.play('left', true);
@@ -264,15 +276,12 @@
                 if (this.reload > 0) {
                     this.reload -= 1;
                 }
-                player.sprite.tint = 0xffffff;//Заменить анимацией
                 var dist = 50;
                 var radius = (Math.abs(this.sprite.x - player.sprite.x) + Math.abs(this.sprite.y - player.sprite.y));
                 if (radius <= dist) {
                     if (this.reload <= 0) {
                         player.sprite.damage(10);
                         this.reload = 100;
-                    } else {
-                        player.sprite.tint = 0xff0000;//Заменить анимацией
                     }
 
                 }
@@ -323,11 +332,14 @@
 
         //Описание переменных
         let game = new Phaser.Game(screen.width, screen.height, Phaser.AUTO, '',
-            { preload: preload, create: create, update: update });
+            { preload: preload, create: create, update: update, render: render });
         let map;
         let player;
         let mobs;
+
         let spawner = 0;
+        let randX;
+        let randY;
 
         function preload() {
             this.load.spritesheet('Characters', 'Assets/Characters.png', 52, 72);
@@ -337,6 +349,7 @@
             this.load.image('Tiles', 'Assets/Map tiles.png');
             this.load.image('HealthbarGreen', 'Assets/HealthbarG.png');
             this.load.image('HealthbarRed', 'Assets/HealthbarR.png');
+            this.load.image('emptyHealthbar', 'Assets/emptyHealthbar.png');
         }
 
         function create() {
@@ -349,11 +362,20 @@
             spawner++;
             if (spawner == 200) {
                 spawner = 0;
-                mobs.addMob(500, 500, 'Skeleton');
+                console.log('Monster Created');
+                randX = Math.random() * screen.width;
+                randY = Math.random() * screen.height;
+                mobs.addMob(randX, randY, 'Skeleton');
             }
+
             player.controller();
             player.battleController();
             mobs.mobsController();
+        }
+
+        function render() {
+            game.debug.text('Player position ' + player.sprite.x + ' : ' + player.sprite.y, 10, 20);
+            game.debug.text('Camera position ' + game.camera.x + ' : ' + game.camera.y, 10, 40);
         }
 
     </script>
