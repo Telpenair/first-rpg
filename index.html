@@ -423,6 +423,7 @@
                     }
                 }
                 this.mob[int].sprite.kill();
+                this.mob[int].healthbar.kill();
                 return newMob;
             }
 
@@ -432,7 +433,7 @@
                     this.mob[i].battleController();
 
                     //Проверка смерти
-                    if (this.mob[i].sprite.health <= 0) {
+                    if (this.mob[i].sprite.health < 0) {
                         this.mob = this.killMob(i);
                     }
                 }
