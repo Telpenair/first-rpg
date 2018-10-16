@@ -288,6 +288,111 @@
             }
         }
 
+        class SkeletonMage{
+            constructor(x, y) {
+                this.sprite = game.add.sprite(x, y, 'Characters', 10);
+                this.sprite.height = 48;
+                this.sprite.width = 32;
+                this.reload = 0;
+
+                game.physics.arcade.enable(this.sprite);
+                this.sprite.body.collideWorldBounds = true;
+
+                this.sprite.health = 25;
+                this.sprite.maxHealth = 25;
+                this.healthbar = game.add.sprite(0, 0, 'HealthbarRed');
+                this.healthbar.width = 52;
+                this.healthbar.height = 8;
+
+                this.sprite.animations.add('left', [21, 22, 23], 10, true);
+                this.sprite.animations.add('right', [33, 34, 35], 10, true);
+                this.sprite.animations.add('up', [45, 46, 47], 10, true);
+                this.sprite.animations.add('down', [9, 10, 11], 10, true);
+            }
+
+            controller() {
+                //Коллизия
+                game.physics.arcade.collide(this.sprite, map.layer);
+
+                //Проверка шкалы здоровья
+                this.healthbar.x = this.sprite.x;
+                this.healthbar.y = this.sprite.y - 8;
+                this.healthbar.width = 32 * (this.sprite.health / this.sprite.maxHealth);
+
+                //Регулятор скорости
+                this.sprite.body.velocity.x = 0;
+                this.sprite.body.velocity.y = 0;
+
+                //Проверка движения
+                const dist_max = 500;
+                const dist_min = 150;
+                var radius = (Math.abs(this.sprite.x - player.sprite.x) + Math.abs(this.sprite.y - player.sprite.y));
+                var agr_on = radius < dist_max;
+                var agr_off = radius > dist_min;
+                var left_on = (player.sprite.x < (this.sprite.x - 2));
+                var right_on = (player.sprite.x > (this.sprite.x + 2));
+                var up_on = (player.sprite.y < this.sprite.y - 2);
+                var down_on = (player.sprite.y > this.sprite.y + 2);
+                //arg_on заменен на true
+                if (true && agr_off) {
+                    if (left_on) {
+                        this.sprite.body.velocity.x = -50;
+                        this.sprite.animations.play('left', true);
+                    }
+                    else if (right_on) {
+                        this.sprite.body.velocity.x = 50;
+                        this.sprite.animations.play('right', true);
+                    }
+                    else {
+                        this.sprite.body.velocity.x = 0;
+                        if (!up_on && !down_on) {
+                            this.sprite.frame = 10;
+                        }
+                    }
+                    if (up_on) {
+                        this.sprite.body.velocity.y = -50;
+                        if (!left_on && !right_on) {
+                            this.sprite.animations.play('up', true);
+                        }
+                    }
+                    else if (down_on) {
+                        this.sprite.body.velocity.y = 50;
+                        if (!left_on && !right_on) {
+                            this.sprite.animations.play('down', true);
+                        }
+                    }
+                    else {
+                        this.sprite.body.velocity.y = 0;
+                        if (!left_on && !right_on) {
+                            this.sprite.frame = 10;
+                        }
+                    }
+                }
+                else {
+                    this.sprite.body.velocity.y = 0;
+                    this.sprite.body.velocity.x = 0;
+                    this.sprite.frame = 10;
+                }
+            }
+            battleController(){
+                if (this.reload > 0) {
+                    this.reload -= 1;
+                }
+                var dist = 150;
+                var radius = (Math.abs(this.sprite.x - player.sprite.x) + Math.abs(this.sprite.y - player.sprite.y));
+                if (radius <= dist) {
+                    if (this.reload <= 0) {
+                        //
+                        
+                        //
+                        this.reload = 1000;
+                    }
+
+                }
+            }
+             
+        }
+
         class Mobs {
             constructor() {
                 this.mob = [];
@@ -299,6 +404,10 @@
                 switch (name) {
                     case 'Skeleton':
                         this.mob[this.mob.length - 1] = new Skeleton(x, y);
+                        break;
+                    case 'SkeletonMage':
+                        this.mob[this.mob.length - 1] = new SkeletonMage(x, y);
+                        break;
                 }
             }
 
@@ -367,6 +476,13 @@
                 randY = Math.random() * screen.height;
                 mobs.addMob(randX, randY, 'Skeleton');
             }
+            if (spawner == 100) {
+                console.log('Monster-Mage Created');
+                randX = Math.random() * screen.width;
+                randY = Math.random() * screen.height;
+                mobs.addMob(randX, randY, 'SkeletonMage');
+            }
+
 
             player.controller();
             player.battleController();
